@@ -3,8 +3,7 @@ import {
 	request as httpRequest,
 	type IncomingMessage,
 	type RequestOptions,
-} from 'http';
-import {URL} from 'url';
+} from 'node:http';
 import test from 'ava';
 import is from '@sindresorhus/is';
 import type {Handler} from 'express';

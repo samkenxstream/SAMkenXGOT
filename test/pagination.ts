@@ -1,5 +1,4 @@
-import {Buffer} from 'buffer';
-import {URL} from 'url';
+import {Buffer} from 'node:buffer';
 import test from 'ava';
 import delay from 'delay';
 import getStream from 'get-stream';

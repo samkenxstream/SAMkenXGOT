@@ -1,9 +1,9 @@
-import process from 'process';
-import {promisify} from 'util';
-import {EventEmitter} from 'events';
-import stream, {PassThrough as PassThroughStream} from 'stream';
-import http from 'http';
-import net from 'net';
+import process from 'node:process';
+import {EventEmitter} from 'node:events';
+import stream, {PassThrough as PassThroughStream} from 'node:stream';
+import {pipeline as streamPipeline} from 'node:stream/promises';
+import http from 'node:http';
+import net from 'node:net';
 import getStream from 'get-stream';
 import test from 'ava';
 import delay from 'delay';
@@ -15,8 +15,6 @@ import timedOut from '../source/core/timed-out.js';
 import slowDataStream from './helpers/slow-data-stream.js';
 import type {GlobalClock} from './helpers/types.js';
 import withServer, {withServerAndFakeTimers, withHttpsServer} from './helpers/with-server.js';
-
-const pStreamPipeline = promisify(stream.pipeline);
 
 const requestDelay = 800;
 
@@ -44,7 +42,7 @@ const downloadHandler = (clock?: GlobalClock): Handler => (_request, response) =
 	response.flushHeaders();
 
 	setImmediate(async () => {
-		await pStreamPipeline(slowDataStream(clock), response);
+		await streamPipeline(slowDataStream(clock), response);
 	});
 };
 

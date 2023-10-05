@@ -1,29 +1,23 @@
 import process from 'node:process';
 import type {Buffer} from 'node:buffer';
-import {promisify, inspect} from 'node:util';
-import {URL, URLSearchParams} from 'node:url';
-import {checkServerIdentity} from 'node:tls';
+import {promisify, inspect, type InspectOptions} from 'node:util';
+import {checkServerIdentity, type SecureContextOptions, type DetailedPeerCertificate} from 'node:tls';
 // DO NOT use destructuring for `https.request` and `http.request` as it's not compatible with `nock`.
-import http from 'node:http';
-import https from 'node:https';
+import https, {
+	type RequestOptions as HttpsRequestOptions,
+	type Agent as HttpsAgent,
+} from 'node:https';
+import http, {
+	type Agent as HttpAgent,
+	type ClientRequest,
+} from 'node:http';
 import type {Readable} from 'node:stream';
 import type {Socket} from 'node:net';
-import type {SecureContextOptions, DetailedPeerCertificate} from 'node:tls';
-import type {
-	Agent as HttpAgent,
-	ClientRequest,
-} from 'node:http';
-import type {
-	RequestOptions as HttpsRequestOptions,
-	Agent as HttpsAgent,
-} from 'node:https';
-import type {InspectOptions} from 'node:util';
 import is, {assert} from '@sindresorhus/is';
 import lowercaseKeys from 'lowercase-keys';
 import CacheableLookup from 'cacheable-lookup';
 import http2wrapper, {type ClientHttp2Session} from 'http2-wrapper';
-import {isFormData} from 'form-data-encoder';
-import type {FormDataLike} from 'form-data-encoder';
+import {isFormData, type FormDataLike} from 'form-data-encoder';
 import type {StorageAdapter} from 'cacheable-request';
 import type ResponseLike from 'responselike';
 import type {IncomingMessageWithTimings} from '@szmarczak/http-timer';
@@ -828,7 +822,7 @@ const defaultInternals: Options['_internals'] = {
 	setHost: true,
 	maxHeaderSize: undefined,
 	signal: undefined,
-	enableUnixSockets: true,
+	enableUnixSockets: false,
 };
 
 const cloneInternals = (internals: typeof defaultInternals) => {
@@ -976,7 +970,7 @@ const init = (options: OptionsInit, withOptions: OptionsInit, self: Options): vo
 
 export default class Options {
 	private _unixOptions?: NativeRequestOptions;
-	private _internals: InternalsType;
+	private readonly _internals: InternalsType;
 	private _merging: boolean;
 	private readonly _init: OptionsInit[];
 
@@ -1078,7 +1072,13 @@ export default class Options {
 				}
 
 				// @ts-expect-error Type 'unknown' is not assignable to type 'never'.
-				this[key as keyof Options] = options[key as keyof Options];
+				const value = options[key as keyof Options];
+				if (value === undefined) {
+					continue;
+				}
+
+				// @ts-expect-error Type 'unknown' is not assignable to type 'never'.
+				this[key as keyof Options] = value;
 
 				push = true;
 			}
@@ -1494,8 +1494,6 @@ export default class Options {
 	/**
 	You can abort the `request` using [`AbortController`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController).
 
-	*Requires Node.js 16 or later.*
-
 	@example
 	```
 	import got from 'got';
@@ -1511,13 +1509,11 @@ export default class Options {
 	}, 100);
 	```
 	*/
-	// TODO: Replace `any` with `AbortSignal` when targeting Node 16.
-	get signal(): any | undefined {
+	get signal(): AbortSignal | undefined {
 		return this._internals.signal;
 	}
 
-	// TODO: Replace `any` with `AbortSignal` when targeting Node 16.
-	set signal(value: any | undefined) {
+	set signal(value: AbortSignal | undefined) {
 		assert.object(value);
 
 		this._internals.signal = value;

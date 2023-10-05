@@ -1,5 +1,5 @@
-import {Agent as HttpAgent} from 'http';
-import {Agent as HttpsAgent} from 'https';
+import {Agent as HttpAgent} from 'node:http';
+import {Agent as HttpsAgent} from 'node:https';
 import test from 'ava';
 import sinon from 'sinon';
 import type {Constructor} from 'type-fest';
@@ -204,4 +204,18 @@ test('no socket hung up regression', withServer, async (t, server, got) => {
 	t.is(body, 'ok');
 
 	agent.destroy();
+});
+
+test('accept undefined agent', withServer, async (t, server, got) => {
+	server.get('/', (_request, response) => {
+		response.end('ok');
+	});
+
+	const undefinedAgent = undefined;
+	t.truthy((await got({
+		https: {
+			rejectUnauthorized: false,
+		},
+		agent: undefinedAgent,
+	})).body);
 });
